@@ -9,14 +9,14 @@ from IDS_smooth_local import (
 )
 
 
-df = pd.read_csv('titanic_train.tab',' ', header=None, names=['Passenger_Cat', 'Age_Cat', 'Gender'])
-df1 = pd.read_csv('titanic_train.Y', ' ', header=None, names=['Died', 'Survived'])
-Y = list(df1['Died'].values)
+df = pd.read_csv('data/iris_train.tab',' ')
+df1 = pd.read_csv('data/iris0.csv', ',')
+Y = list(df1['class'].values)
 
 
 
 
-itemsets = run_apriori(df, 0.2)
+itemsets = run_fim_apriori(df, 0.8)
 print("----------list of rules------------")
 list_of_rules = createrules(itemsets, list(set(Y)))
 print("----------------------")

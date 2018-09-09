@@ -9,6 +9,10 @@ from apyori import apriori
 from memoized import memoized
 
 
+cache = {}
+CORRECT_COVER_CACHE = {}
+INCORRECT_COVER_CACHE = {}
+
 # rule is of the form if A == a and B == b, then class_1
 # one of the member variables is itemset - a set of patterns {(A,a), (B,b)}
 # the other member variable is class_label (e.g., class_1)
@@ -19,6 +23,7 @@ class rule:
         self.class_label = None
         self.add_item(feature_list,value_list)
         self.set_class_label(class_label)
+        self.cover = None
     
     def add_item(self,feature_list,value_list):
         
@@ -49,25 +54,53 @@ class rule:
     def get_length(self):
         return len(self.itemset)
     
-    def get_cover(self, df):
-        dfnew = df.copy()
-        for pattern in self.itemset: 
-            dfnew = dfnew[dfnew[pattern[0]] == pattern[1]]
-        return list(dfnew.index.values)
 
-    def get_correct_cover(self, df, Y):
-        indexes_points_covered = self.get_cover(df) # indices of all points satisfying the rule
-        Y_arr = pd.Series(Y)                    # make a series of all Y labels
-        labels_covered_points = list(Y_arr[indexes_points_covered])   # get a list only of Y labels of the points covered
-        correct_cover = []
-        for ind in range(0,len(labels_covered_points)):
-            if labels_covered_points[ind] == self.class_label:
-                correct_cover.append(indexes_points_covered[ind])
-        return correct_cover, indexes_points_covered
-    
+    # faster version with memoization
+    def get_cover(r, df):    
+        result = cache.get(repr(r))
+        
+        if result:
+            return result
+        
+        mask = np.ones(len(df), dtype=bool)
+        for pattern in r.itemset:
+            mask &= df[pattern[0]] == pattern[1]
+            
+        result = list(df[mask].index.values)
+        
+        cache[repr(r)] = result 
+            
+        return result
+
+    def get_correct_cover(r, df, Y):
+        result = CORRECT_COVER_CACHE.get(repr(r))
+        
+        if result:
+            return result
+        
+        indexes_points_covered = r.get_cover(df) # indices of all points satisfying the rule
+        Y_arr = np.array(Y)                    # make a series of all Y labels
+        labels_covered_points = Y_arr[indexes_points_covered]   # get a list only of Y labels of th
+        mask = labels_covered_points == r.class_label
+        result = np.array(indexes_points_covered)[mask]
+        
+        CORRECT_COVER_CACHE[repr(r)] = result, indexes_points_covered
+
+        return result, indexes_points_covered
+        
     def get_incorrect_cover(self, df, Y):
+        result = INCORRECT_COVER_CACHE.get(repr(self))
+
+        if result:
+            return result
+
         correct_cover, full_cover = self.get_correct_cover(df, Y)
-        return (sorted(list(set(full_cover) - set(correct_cover))))
+
+        result = (sorted(list(set(full_cover) - set(correct_cover))))
+
+        INCORRECT_COVER_CACHE[repr(self)] = result
+
+        return result
 
 
 # below function basically takes a data frame and a support threshold and returns itemsets which satisfy the threshold
@@ -120,8 +153,18 @@ def max_rule_length(list_rules):
 
 
 # compute the number of points which are covered both by r1 and r2 w.r.t. data frame df
+OVERLAP_CACHE = {}
 def overlap(r1, r2, df):
-    return sorted(list(set(r1.get_cover(df)).intersection(set(r2.get_cover(df)))))
+    result = OVERLAP_CACHE.get(repr(r1) + repr(r2))
+
+    if result:
+        return result
+
+    result =  sorted(list(set(r1.get_cover(df)).intersection(set(r2.get_cover(df)))))
+
+    OVERLAP_CACHE[repr(r1) + repr(r2)] = result
+
+    return result
 
 
 # computes the objective value of a given solution set
