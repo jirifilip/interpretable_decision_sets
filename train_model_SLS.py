@@ -5,20 +5,26 @@ from IDS_smooth_local import (
     smooth_local_search,
     func_evaluation,
     createrules,
-    run_apriori
+    run_apriori,
+    prepare_caches
 )
 
 
-df = pd.read_csv('data/iris_train.tab',' ')
-df1 = pd.read_csv('data/iris0.csv', ',')
-Y = list(df1['class'].values)
+
+df = pd.read_csv('data/iris0.csv', ',')
+
+df_raw = df.iloc[:, :-1]
+Y = df.iloc[:, -1]
+
+
+rules = run_fim_apriori(df_raw, 0.25)
 
 
 
+list_of_rules = createrules(rules, list(set(Y)))
+prepare_caches(list_of_rules, df, Y)
 
-itemsets = run_fim_apriori(df, 0.8)
-print("----------list of rules------------")
-list_of_rules = createrules(itemsets, list(set(Y)))
+
 print("----------------------")
 for r in list_of_rules:
     r.print_rule()

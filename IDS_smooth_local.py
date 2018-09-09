@@ -24,6 +24,7 @@ class rule:
         self.add_item(feature_list,value_list)
         self.set_class_label(class_label)
         self.cover = None
+        self.correct_cover = None
     
     def add_item(self,feature_list,value_list):
         
@@ -154,15 +155,20 @@ def max_rule_length(list_rules):
 
 # compute the number of points which are covered both by r1 and r2 w.r.t. data frame df
 OVERLAP_CACHE = {}
+
+def print_overlap_cache():
+    print(OVERLAP_CACHE)
+
 def overlap(r1, r2, df):
-    result = OVERLAP_CACHE.get(repr(r1) + repr(r2))
+    result = OVERLAP_CACHE.get(frozenset([r1, r2]))
 
     if result:
         return result
 
-    result =  sorted(list(set(r1.get_cover(df)).intersection(set(r2.get_cover(df)))))
+    
+    result =  sorted(list(set(r1.cover).intersection(set(r2.cover))))
 
-    OVERLAP_CACHE[repr(r1) + repr(r2)] = result
+    OVERLAP_CACHE[frozenset([r1, r2])] = result
 
     return result
 
@@ -332,7 +338,7 @@ def smooth_local_search(list_rules, df, Y, lambda_array, delta, delta_prime):
             print("Estimating omega for rule "+str(rule_x_index))
             omega_est = estimate_omega_for_element(soln_set, delta, rule_x_index, list_rules, df, Y, lambda_array, 1.0/(n*n) * OPT)
             omega_estimates.append(omega_est)
-            print("Omega estimate is "+str(omega_est))
+            #print("Omega estimate is "+str(omega_est))
             
             if rule_x_index in soln_set:
                 continue
@@ -368,6 +374,19 @@ def smooth_local_search(list_rules, df, Y, lambda_array, delta, delta_prime):
 
 
 # input data and function calls 
+def prepare_caches(list_of_rules, df, Y):
+    for rule in list_of_rules:
+        rule.cover = rule.get_cover(df)
+        rule.correct_cover = rule.get_correct_cover(df, Y)
+
+    for r1 in list_of_rules:
+        for r2 in list_of_rules:
+            OVERLAP_CACHE[frozenset([r1, r2])] = overlap(r1, r2, df)
+
+
+
+
+
 """
 df = pd.read_csv('titanic_train.tab',' ', header=None, names=['Passenger_Cat', 'Age_Cat', 'Gender'])
 df1 = pd.read_csv('titanic_train.Y', ' ', header=None, names=['Died', 'Survived'])
