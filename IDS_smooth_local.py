@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import math
 from apyori import apriori
-from memoized import memoized
+
 
 
 cache = {}
