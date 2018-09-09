@@ -5,6 +5,7 @@
 import numpy as np
 import pandas as pd
 import math
+import fim
 from apyori import apriori
 
 
@@ -195,6 +196,10 @@ def func_evaluation(soln_set, list_rules, df, Y, lambda_array):
     return obj_val
 
 
+
+
+
+
 # deterministic local search algorithm which returns a solution set as well as the corresponding objective value
 def deterministic_local_search(list_rules, df, Y, lambda_array, epsilon):
     # step by step implementation of deterministic local search algorithm in the 
@@ -262,11 +267,16 @@ def deterministic_local_search(list_rules, df, Y, lambda_array, epsilon):
 
 
 # input data and function calls 
-df = pd.read_csv('titanic_train.tab',' ', header=None, names=['Passenger_Cat', 'Age_Cat', 'Gender'])
-df1 = pd.read_csv('titanic_train.Y', ' ', header=None, names=['Died', 'Survived'])
-Y = list(df1['Died'].values)
+#df = pd.read_csv('titanic_train.tab',' ', header=None, names=['Passenger_Cat', 'Age_Cat', 'Gender'])
+#df1 = pd.read_csv('titanic_train.Y', ' ', header=None, names=['Died', 'Survived'])
+#Y = list(df1['Died'].values)
+"""
+df = pd.read_csv('data/iris_train.tab',' ')
+df1 = pd.read_csv('data/iris0.csv')
+Y = list(df1['class'].values)
 
-itemsets = run_apriori(df, 0.1)
+
+itemsets = run_fim_apriori(df, 0.8)
 list_of_rules = createrules(itemsets, list(set(Y)))
 print("----------------------")
 for r in list_of_rules:
@@ -278,3 +288,4 @@ soln_set, obj_val = deterministic_local_search(list_of_rules, df, Y, lambda_arra
 print(soln_set)
 print(obj_val)
 
+"""

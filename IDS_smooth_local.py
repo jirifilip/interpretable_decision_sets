@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 import math
 from apyori import apriori
+from memoized import memoized
+
 
 # rule is of the form if A == a and B == b, then class_1
 # one of the member variables is itemset - a set of patterns {(A,a), (B,b)}
@@ -289,7 +291,7 @@ def smooth_local_search(list_rules, df, Y, lambda_array, delta, delta_prime):
             omega_estimates.append(omega_est)
             print("Omega estimate is "+str(omega_est))
             
-             if rule_x_index in soln_set:
+            if rule_x_index in soln_set:
                 continue
             
             if omega_est > 2.0/(n*n) * OPT:
@@ -323,7 +325,7 @@ def smooth_local_search(list_rules, df, Y, lambda_array, delta, delta_prime):
 
 
 # input data and function calls 
-
+"""
 df = pd.read_csv('titanic_train.tab',' ', header=None, names=['Passenger_Cat', 'Age_Cat', 'Gender'])
 df1 = pd.read_csv('titanic_train.Y', ' ', header=None, names=['Died', 'Survived'])
 Y = list(df1['Died'].values)
@@ -346,3 +348,4 @@ if f1 > f2:
 else:
     print("The Solution Set is: "+str(s2))
 
+"""
