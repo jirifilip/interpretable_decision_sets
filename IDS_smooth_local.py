@@ -264,7 +264,7 @@ def func_evaluation(soln_set, list_rules, df, Y, lambda_array):
     for i in range(7):
         obj_val += f[i] * lambda_array[i]
     
-    print(obj_val)
+    #print(obj_val)
     return obj_val
 
 

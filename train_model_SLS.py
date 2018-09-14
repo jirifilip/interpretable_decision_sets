@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 
+
 from multiprocessing import Pool
 from rule_miner import run_fim_apriori
 from IDS_smooth_local import (
@@ -11,10 +12,17 @@ from IDS_smooth_local import (
     prepare_caches,
     prepare_overlap
 )
+from rules import predict
 
+from sklearn.metrics import accuracy_score
 
-
-
+from pyarc import TransactionDB
+from pyarc.algorithms import (
+    top_rules,
+    createCARs,
+    M1Algorithm
+)
+from pyarc import CBA, TransactionDB
         
 
 
@@ -34,11 +42,13 @@ else:
     result_set = list(s2)
 """
 
-df = pd.read_csv('data/iris0.csv', ',')
+df = pd.read_csv('data/breast-w0.csv', ',')
 df_raw = df.iloc[:, :-1]
 Y = df.iloc[:, -1]
 
-rules = run_fim_apriori(df_raw, 0.35)
+txns_train = TransactionDB.from_DataFrame(df)
+
+rules = run_fim_apriori(df_raw, 0.55)
 list_of_rules = createrules(rules, list(set(Y)))
 
 prepare_caches(list_of_rules, df, Y)
@@ -57,14 +67,27 @@ def f(x):
 if __name__ == "__main__":
    
 
+    print("---------------------")
+    print("Training CBA model")
+    print("---------------------")
+
+    cba = CBA(support=0.55, confidence=0, algorithm="m1")
+    cba.fit(txns_train)
+
+    cba_accuracy = cba.rule_model_accuracy(txns_train)
+
     # precompute values for cover and correct cover
     
 
-    print("----------------------")
+    print("---------------------")
+    print("All mined rules for IDS")
+    print("---------------------")
     for r in list_of_rules:
         r.print_rule()
 
-
+    print("---------------------")
+    print("Starting SLS")
+    print("---------------------")
     
 
     
@@ -91,5 +114,21 @@ if __name__ == "__main__":
     solution_rules = np_rules[result_set]
 
     print("---------------------")
-    list(map(lambda r: r.print_rule(), solution_rules))
+    print("IDS rules")
+    print("---------------------")
+    for r in solution_rules:
+        r.print_rule()
     
+    print("---------------------")
+    print("CBA rules")
+    print("---------------------")
+    for r in cba.clf.rules:
+        print(r)
+
+    print("----------------------")
+
+    pred = predict(result_set, list_of_rules, df, Y)
+    print("IDS accuracy", accuracy_score(pred, Y))
+    print("CBA accuracy", cba_accuracy)
+
+

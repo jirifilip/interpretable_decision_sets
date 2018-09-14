@@ -10,8 +10,8 @@ def predict(soln_set, list_rules, df, Y):
         rule = list_rules[index]
 
         y_pred_per_rule = list(rule.get_y_pred_per_rule(df, Y))
-        print('rule {} score:'.format(index))
-        print(classification_report(Y, y_pred_per_rule))
+        #print('rule {} score:'.format(index))
+        #print(classification_report(Y, y_pred_per_rule))
         rule_f1_score = f1_score(Y, y_pred_per_rule, average='micro')
         y_pred_dict.update({rule_f1_score: y_pred_per_rule})
 
