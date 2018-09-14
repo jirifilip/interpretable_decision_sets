@@ -2,3 +2,4 @@ fim
 numpy
 pandas
 sklearn
+scipy
