@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 import math
 
-from apyori import apriori
 from rules import predict
 
 dummy_label = "N/A"
