@@ -1,3 +1,4 @@
 fim
 numpy
 pandas
+sklearn

@@ -5,9 +5,11 @@
 import numpy as np
 import pandas as pd
 import math
+
 from apyori import apriori
+from rules import predict
 
-
+dummy_label = "N/A"
 
 cache = {}
 CORRECT_COVER_CACHE = {}
@@ -25,6 +27,7 @@ class rule:
         self.set_class_label(class_label)
         self.cover = None
         self.correct_cover = None
+        self.overlaps = {}
     
     def add_item(self,feature_list,value_list):
         
@@ -54,6 +57,20 @@ class rule:
         
     def get_length(self):
         return len(self.itemset)
+
+    def calc_overlap(self, rule_list, df):
+        for rule in rule_list:
+            self.overlaps[rule] = overlap(self, rule, df)
+
+    def get_y_pred_per_rule(self, df, Y):
+        correct_cover, _ = self.get_correct_cover(df, Y)
+        y_pred_per_rule = []
+        for subscript in df.index.values:
+            if subscript in correct_cover:
+                y_pred_per_rule.append(self.class_label)
+            else:
+                y_pred_per_rule.append(dummy_label)
+        return y_pred_per_rule
     
 
     # faster version with memoization
@@ -160,17 +177,20 @@ def print_overlap_cache():
     print(OVERLAP_CACHE)
 
 def overlap(r1, r2, df):
-    result = OVERLAP_CACHE.get(frozenset([r1, r2]))
+    
+    result = OVERLAP_CACHE.get(repr(r1) + repr(r2))
 
     if result:
         return result
 
-    
     result =  sorted(list(set(r1.cover).intersection(set(r2.cover))))
 
-    OVERLAP_CACHE[frozenset([r1, r2])] = result
+    OVERLAP_CACHE[repr(r1) + repr(r2)] = result
 
     return result
+
+def overlap_fast(r1, r2, df):
+    return r1.overlaps[r2]
 
 
 # computes the objective value of a given solution set
@@ -200,7 +220,8 @@ def func_evaluation(soln_set, list_rules, df, Y, lambda_array):
             if r1_index >= r2_index:
                 continue
             if list_rules[r1_index].class_label == list_rules[r2_index].class_label:
-                sum_overlap_intraclass += len(overlap(list_rules[r1_index], list_rules[r2_index],df))
+                overlap_tmp = list_rules[r1_index].overlaps[list_rules[r2_index]]
+                sum_overlap_intraclass += len(overlap_tmp)
     f2 = df.shape[0] * len(list_rules) * len(list_rules) - sum_overlap_intraclass
     f.append(f2)
     
@@ -211,7 +232,8 @@ def func_evaluation(soln_set, list_rules, df, Y, lambda_array):
             if r1_index >= r2_index:
                 continue
             if list_rules[r1_index].class_label != list_rules[r2_index].class_label:
-                sum_overlap_interclass += len(overlap(list_rules[r1_index], list_rules[r2_index],df))
+                overlap_tmp = list_rules[r1_index].overlaps[list_rules[r2_index]]
+                sum_overlap_interclass += len(overlap_tmp)
     f3 = df.shape[0] * len(list_rules) * len(list_rules) - sum_overlap_interclass
     f.append(f3)
     
@@ -228,6 +250,7 @@ def func_evaluation(soln_set, list_rules, df, Y, lambda_array):
         sum_incorrect_cover += len(list_rules[index].get_incorrect_cover(df,Y))
     f5 = df.shape[0] * len(list_rules) - sum_incorrect_cover
     f.append(f5)
+
     
     #f6 term - cover correctly with at least one rule
     atleast_once_correctly_covered = set()
@@ -241,7 +264,7 @@ def func_evaluation(soln_set, list_rules, df, Y, lambda_array):
     for i in range(7):
         obj_val += f[i] * lambda_array[i]
     
-    #print(f)
+    print(obj_val)
     return obj_val
 
 
@@ -379,12 +402,15 @@ def prepare_caches(list_of_rules, df, Y):
         rule.cover = rule.get_cover(df)
         rule.correct_cover = rule.get_correct_cover(df, Y)
 
+    """
     for r1 in list_of_rules:
         for r2 in list_of_rules:
-            OVERLAP_CACHE[frozenset([r1, r2])] = overlap(r1, r2, df)
+            OVERLAP_CACHE[repr(r1) + repr(r2)] = overlap(r1, r2, df)
+    """
 
-
-
+def prepare_overlap(list_of_rules, df):
+    for r1 in list_of_rules:
+        r1.calc_overlap(list_of_rules, df)
 
 
 """

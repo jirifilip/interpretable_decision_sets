@@ -8,7 +8,8 @@ from IDS_smooth_local import (
     func_evaluation,
     createrules,
     run_apriori,
-    prepare_caches
+    prepare_caches,
+    prepare_overlap
 )
 
 
@@ -37,9 +38,11 @@ df = pd.read_csv('data/iris0.csv', ',')
 df_raw = df.iloc[:, :-1]
 Y = df.iloc[:, -1]
 
-rules = run_fim_apriori(df_raw, 0.25)
+rules = run_fim_apriori(df_raw, 0.35)
 list_of_rules = createrules(rules, list(set(Y)))
+
 prepare_caches(list_of_rules, df, Y)
+prepare_overlap(list_of_rules, df)
 
 def optimize(param):
     lambda_array = [1.0]*7     # use separate hyperparamter search routine
