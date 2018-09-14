@@ -42,13 +42,13 @@ else:
     result_set = list(s2)
 """
 
-df = pd.read_csv('data/breast-w0.csv', ',')
+df = pd.read_csv('data/segment0.csv', ',')
 df_raw = df.iloc[:, :-1]
 Y = df.iloc[:, -1]
 
 txns_train = TransactionDB.from_DataFrame(df)
 
-rules = run_fim_apriori(df_raw, 0.55)
+rules = run_fim_apriori(df_raw, 0.8)
 list_of_rules = createrules(rules, list(set(Y)))
 
 prepare_caches(list_of_rules, df, Y)
@@ -57,7 +57,7 @@ prepare_overlap(list_of_rules, df)
 def optimize(param):
     lambda_array = [1.0]*7     # use separate hyperparamter search routine
     s1 = smooth_local_search(list_of_rules, df, Y, lambda_array, 0.33, param)
-    f1 = func_evaluation(s1, list_of_rules, df, Y, lambda_array)
+    f1 = func_evaluation(s1, list_of_rules, df, Y, lambda_array, len(list_of_rules))
 
     return f1, s1
 

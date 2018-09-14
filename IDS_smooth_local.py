@@ -194,14 +194,14 @@ def overlap_fast(r1, r2, df):
 
 
 # computes the objective value of a given solution set
-def func_evaluation(soln_set, list_rules, df, Y, lambda_array):
+def func_evaluation(soln_set, list_rules, df, Y, lambda_array, len_list_rules):
     # evaluate the objective function based on rules in solution set 
     # soln set is a set of indexes which when used to index elements in list_rules point to the exact rules in the solution set
     # compute f1 through f7 and we assume there are 7 lambdas in lambda_array
     f = [] #stores values of f1 through f7; 
     
     # f0 term
-    f0 = len(list_rules) - len(soln_set) # |S| - size(R)
+    f0 = len_list_rules - len(soln_set) # |S| - size(R)
     f.append(f0)
     
     # f1 term
@@ -210,7 +210,7 @@ def func_evaluation(soln_set, list_rules, df, Y, lambda_array):
     for rule_index in soln_set:
         sum_rule_length += list_rules[rule_index].get_length()
     
-    f1 = Lmax * len(list_rules) - sum_rule_length
+    f1 = Lmax * len_list_rules - sum_rule_length
     f.append(f1)
     
     # f2 term - intraclass overlap
@@ -222,7 +222,7 @@ def func_evaluation(soln_set, list_rules, df, Y, lambda_array):
             if list_rules[r1_index].class_label == list_rules[r2_index].class_label:
                 overlap_tmp = list_rules[r1_index].overlaps[list_rules[r2_index]]
                 sum_overlap_intraclass += len(overlap_tmp)
-    f2 = df.shape[0] * len(list_rules) * len(list_rules) - sum_overlap_intraclass
+    f2 = df.shape[0] * len_list_rules * len_list_rules - sum_overlap_intraclass
     f.append(f2)
     
     # f3 term - interclass overlap
@@ -234,7 +234,7 @@ def func_evaluation(soln_set, list_rules, df, Y, lambda_array):
             if list_rules[r1_index].class_label != list_rules[r2_index].class_label:
                 overlap_tmp = list_rules[r1_index].overlaps[list_rules[r2_index]]
                 sum_overlap_interclass += len(overlap_tmp)
-    f3 = df.shape[0] * len(list_rules) * len(list_rules) - sum_overlap_interclass
+    f3 = df.shape[0] * len_list_rules * len_list_rules - sum_overlap_interclass
     f.append(f3)
     
     # f4 term - coverage of all classes
@@ -248,7 +248,7 @@ def func_evaluation(soln_set, list_rules, df, Y, lambda_array):
     sum_incorrect_cover = 0.0
     for index in soln_set:
         sum_incorrect_cover += len(list_rules[index].get_incorrect_cover(df,Y))
-    f5 = df.shape[0] * len(list_rules) - sum_incorrect_cover
+    f5 = df.shape[0] * len_list_rules - sum_incorrect_cover
     f.append(f5)
 
     
@@ -293,7 +293,7 @@ def sample_random_set(soln_set, delta, len_list_rules):
 
 
 # Helper function for smooth_local_search routine: Computes estimated gain of adding an element to the solution set
-def estimate_omega_for_element(soln_set, delta, rule_x_index, list_rules, df, Y, lambda_array, error_threshold):
+def estimate_omega_for_element(soln_set, delta, rule_x_index, list_rules, df, Y, lambda_array, error_threshold, len_list_rules):
     #assumes rule_x_index is not in soln_set 
     
     Exp1_func_vals = []
@@ -306,14 +306,14 @@ def estimate_omega_for_element(soln_set, delta, rule_x_index, list_rules, df, Y,
         for i in range(10):
             temp_soln_set = sample_random_set(soln_set, delta, len(list_rules))
             temp_soln_set.add(rule_x_index)
-            Exp1_func_vals.append(func_evaluation(temp_soln_set, list_rules, df, Y, lambda_array))
+            Exp1_func_vals.append(func_evaluation(temp_soln_set, list_rules, df, Y, lambda_array, len_list_rules))
         
         # second expectation term (exclude x)
         for j in range(10):
             temp_soln_set = sample_random_set(soln_set, delta, len(list_rules))
             if rule_x_index in temp_soln_set:
                 temp_soln_set.remove(rule_x_index)
-            Exp2_func_vals.append(func_evaluation(temp_soln_set, list_rules, df, Y, lambda_array))
+            Exp2_func_vals.append(func_evaluation(temp_soln_set, list_rules, df, Y, lambda_array, len_list_rules))
     
         # compute standard error of mean difference
         variance_Exp1 = np.var(Exp1_func_vals, dtype=np.float64)
@@ -328,13 +328,13 @@ def estimate_omega_for_element(soln_set, delta, rule_x_index, list_rules, df, Y,
 
 
 # Helper function for smooth_local_search routine: Computes the 'estimate' of optimal value using random search 
-def compute_OPT(list_rules, df, Y, lambda_array):
+def compute_OPT(list_rules, df, Y, lambda_array, len_list_rules):
     opt_set = set()
-    for i in range(len(list_rules)):
+    for i in range(len_list_rules):
         r_val = np.random.uniform()
         if r_val <= 0.5:
             opt_set.add(i)
-    return func_evaluation(opt_set, list_rules, df, Y, lambda_array)
+    return func_evaluation(opt_set, list_rules, df, Y, lambda_array, len_list_rules)
 
 
 # smooth local search algorithm which returns a solution set
@@ -344,7 +344,8 @@ def smooth_local_search(list_rules, df, Y, lambda_array, delta, delta_prime):
     
     # step 1: set the value n and OPT; initialize soln_set to empty
     n = len(list_rules)
-    OPT = compute_OPT(list_rules, df, Y, lambda_array)
+    OPT = compute_OPT(list_rules, df, Y, lambda_array, n)
+
     print("2/n*n OPT value is "+str(2.0/(n*n)*OPT))
     
     soln_set = set()
@@ -359,7 +360,7 @@ def smooth_local_search(list_rules, df, Y, lambda_array, delta, delta_prime):
         for rule_x_index in range(n):
                 
             print("Estimating omega for rule "+str(rule_x_index))
-            omega_est = estimate_omega_for_element(soln_set, delta, rule_x_index, list_rules, df, Y, lambda_array, 1.0/(n*n) * OPT)
+            omega_est = estimate_omega_for_element(soln_set, delta, rule_x_index, list_rules, df, Y, lambda_array, 1.0/(n*n) * OPT, n)
             omega_estimates.append(omega_est)
             #print("Omega estimate is "+str(omega_est))
             
