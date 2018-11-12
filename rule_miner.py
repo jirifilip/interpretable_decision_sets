@@ -12,9 +12,11 @@ def process_dataset(df):
     
 
 def run_fim_apriori(df, minsup):
+    print("running fim apriori function")
     processed_df = process_dataset(df)
-    
+    print("dataset processed")
     result_raw = fim.apriori(processed_df, supp=(minsup*100))
+    print("apriori runned")
     result = list(map(lambda i: list(i[0]), result_raw))
-    
+    print("apriori results processed")
     return result
