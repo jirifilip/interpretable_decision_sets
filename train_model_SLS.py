@@ -53,7 +53,7 @@ Y = df.iloc[:, -1]
 
 txns_train = TransactionDB.from_DataFrame(df)
 
-rules = run_fim_apriori(df_raw, 0.35)
+rules = run_fim_apriori(df_raw, 0.30)
 
 list_of_rules = createrules(rules, list(set(Y)))
 print(len(list_of_rules), "rules created")

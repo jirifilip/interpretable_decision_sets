@@ -19,7 +19,7 @@ INCORRECT_COVER_CACHE = {}
 # the other member variable is class_label (e.g., class_1)
 class rule:
     
-    def __init__(self,feature_list,value_list,class_label):
+    def __init__(self,feature_list,value_list,class_label, support=0, confidence=0):
         self.itemset = set()
         self.class_label = None
         self.add_item(feature_list,value_list)
@@ -27,6 +27,10 @@ class rule:
         self.cover = None
         self.correct_cover = None
         self.overlaps = {}
+
+        self.support = 0
+        self.confidence = 0
+
     
     def add_item(self,feature_list,value_list):
         
@@ -337,7 +341,7 @@ def compute_OPT(list_rules, df, Y, lambda_array, len_list_rules):
 
 
 # smooth local search algorithm which returns a solution set
-def smooth_local_search(list_rules, df, Y, lambda_array, delta, delta_prime):
+def smooth_local_search(list_rules, df, Y, lambda_array, delta, delta_prime, func_evaluation=func_evaluation):
     # step by step implementation of smooth local search algorithm in the 
     # FOCS paper: https://people.csail.mit.edu/mirrokni/focs07.pdf (page 6)
     
